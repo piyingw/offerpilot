@@ -1,4 +1,8 @@
+import { useQuery } from '@tanstack/react-query'
 import { Card, Col, Row, Statistic, Timeline, Typography } from 'antd'
+import { applicationApi } from '@/api/application'
+import { interviewApi } from '@/api/interview'
+import { resumeApi } from '@/api/resume'
 import { useAuthStore } from '@/stores/authStore'
 
 const MILESTONES: { label: string; desc: string; state: 'finish' | 'processing' | 'pending' }[] = [
@@ -14,6 +18,12 @@ const TIMELINE_COLOR = { finish: 'green', processing: 'blue', pending: 'gray' } 
 
 export default function Dashboard() {
   const user = useAuthStore((s) => s.user)
+  const { data: resumes } = useQuery({ queryKey: ['resumes'], queryFn: resumeApi.list })
+  const { data: interviews } = useQuery({ queryKey: ['interviews'], queryFn: interviewApi.list })
+  const { data: stats } = useQuery({
+    queryKey: ['applications', 'stats'],
+    queryFn: applicationApi.stats,
+  })
 
   return (
     <div>
@@ -23,17 +33,17 @@ export default function Dashboard() {
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={8}>
           <Card>
-            <Statistic title="简历" value={0} suffix="份" />
+            <Statistic title="简历" value={resumes?.length ?? 0} suffix="份" />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
           <Card>
-            <Statistic title="模拟面试" value={0} suffix="场" />
+            <Statistic title="模拟面试" value={interviews?.length ?? 0} suffix="场" />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
           <Card>
-            <Statistic title="投递记录" value={0} suffix="条" />
+            <Statistic title="投递记录" value={stats?.total ?? 0} suffix="条" />
           </Card>
         </Col>
         <Col span={24}>

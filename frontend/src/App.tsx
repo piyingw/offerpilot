@@ -2,7 +2,9 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import RequireAuth from '@/components/RequireAuth'
 import ComingSoon from '@/components/ComingSoon'
 import BasicLayout from '@/layouts/BasicLayout'
+import Board from '@/pages/Board'
 import Dashboard from '@/pages/Dashboard'
+import Delivery from '@/pages/Delivery'
 import InterviewList from '@/pages/InterviewList'
 import InterviewRoom from '@/pages/InterviewRoom'
 import Login from '@/pages/Login'
@@ -26,8 +28,8 @@ export default function App() {
         <Route path="resume" element={<ResumeCenter />} />
         <Route path="interview" element={<InterviewList />} />
         <Route path="interview/:id" element={<InterviewRoom />} />
-        <Route path="delivery" element={<ComingSoon title="投递中心" />} />
-        <Route path="board" element={<ComingSoon title="进度看板" />} />
+        <Route path="delivery" element={<Delivery />} />
+        <Route path="board" element={<Board />} />
         <Route path="settings" element={<ComingSoon title="设置" />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

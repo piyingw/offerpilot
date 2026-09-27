@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import auth, health, interviews, resumes
+from app.api.routes import applications, auth, health, interviews, resumes
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.services.llm import LLMNotConfiguredError
@@ -29,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router, prefix=settings.API_PREFIX)
     app.include_router(resumes.router, prefix=settings.API_PREFIX)
     app.include_router(interviews.router, prefix=settings.API_PREFIX)
+    app.include_router(applications.router, prefix=settings.API_PREFIX)
     return app
 
 
