@@ -2,7 +2,7 @@
 
 import json
 
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF 新版推荐导入名
 from docx import Document as DocxDocument
 from langchain_core.messages import HumanMessage
 from loguru import logger
