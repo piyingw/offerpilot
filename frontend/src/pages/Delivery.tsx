@@ -49,15 +49,19 @@ export default function Delivery() {
 
   const [q, setQ] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<ApplicationDetail | null>(null)
   const [saving, setSaving] = useState(false)
   const [detailId, setDetailId] = useState<number | null>(null)
 
-  const { data: items = [], isLoading } = useQuery({
-    queryKey: ['applications', q, statusFilter],
-    queryFn: () => applicationApi.list({ q: q || undefined, status_filter: statusFilter }),
+  const { data: pageData, isLoading } = useQuery({
+    queryKey: ['applications', q, statusFilter, page, pageSize],
+    queryFn: () =>
+      applicationApi.list({ q: q || undefined, status_filter: statusFilter, page, page_size: pageSize }),
   })
+  const items = pageData?.items ?? []
   const { data: resumes = [] } = useQuery({ queryKey: ['resumes'], queryFn: resumeApi.list })
   const { data: detail, isLoading: detailLoading } = useQuery({
     queryKey: ['application', detailId],
@@ -151,7 +155,10 @@ export default function Delivery() {
         <Input.Search
           placeholder="搜索公司 / 岗位"
           allowClear
-          onSearch={(v) => setQ(v.trim())}
+          onSearch={(v) => {
+            setQ(v.trim())
+            setPage(1)
+          }}
           style={{ width: 240 }}
         />
         <Select
@@ -160,7 +167,10 @@ export default function Delivery() {
           style={{ width: 160 }}
           options={STATUS_OPTIONS}
           value={statusFilter}
-          onChange={(v) => setStatusFilter(v)}
+          onChange={(v) => {
+            setStatusFilter(v)
+            setPage(1)
+          }}
         />
         <Button type="primary" onClick={() => void openCreate()}>
           新增投递
@@ -171,7 +181,16 @@ export default function Delivery() {
         rowKey="id"
         loading={isLoading}
         dataSource={items}
-        pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }}
+        pagination={{
+          current: page,
+          pageSize,
+          total: pageData?.total ?? 0,
+          showTotal: (t) => `共 ${t} 条`,
+          onChange: (p, ps) => {
+            setPage(p)
+            setPageSize(ps)
+          },
+        }}
         columns={[
           { title: '公司', dataIndex: 'company' },
           { title: '岗位', dataIndex: 'position' },

@@ -26,7 +26,7 @@ export default function Register() {
       await authApi.register(payload)
       // 注册成功后直接登录，省一步操作
       const data = await authApi.login({ username: payload.username, password: payload.password })
-      setAuth(data.access_token, data.user)
+      setAuth(data.access_token, data.refresh_token, data.user)
       message.success('注册成功')
       navigate('/', { replace: true })
     } catch (err) {

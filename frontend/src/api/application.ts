@@ -54,6 +54,13 @@ export interface RecentEventItem {
   note: string | null
 }
 
+export interface ApplicationPage {
+  items: ApplicationItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
 export interface ApplicationStats {
   total: number
   active: number
@@ -83,8 +90,8 @@ export interface ApplicationPayload {
 export const applicationApi = {
   create: (payload: ApplicationPayload) =>
     client.post<ApplicationDetail>('/applications', payload).then((r) => r.data),
-  list: (params?: { q?: string; status_filter?: string }) =>
-    client.get<ApplicationItem[]>('/applications', { params }).then((r) => r.data),
+  list: (params?: { q?: string; status_filter?: string; page?: number; page_size?: number }) =>
+    client.get<ApplicationPage>('/applications', { params }).then((r) => r.data),
   stats: () => client.get<ApplicationStats>('/applications/stats').then((r) => r.data),
   get: (id: number) => client.get<ApplicationDetail>(`/applications/${id}`).then((r) => r.data),
   update: (id: number, payload: ApplicationPayload) =>

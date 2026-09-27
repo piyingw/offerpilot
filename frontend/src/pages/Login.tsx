@@ -22,7 +22,7 @@ export default function Login() {
   const onFinish = async (values: LoginForm) => {
     try {
       const data = await authApi.login(values)
-      setAuth(data.access_token, data.user)
+      setAuth(data.access_token, data.refresh_token, data.user)
       message.success('登录成功')
       navigate('/', { replace: true })
     } catch (err) {

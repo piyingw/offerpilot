@@ -54,18 +54,21 @@ def test_patch_without_status_change_keeps_single_event(client, auth_headers):
     assert len(body["events"]) == 1
 
 
-def test_list_filters(client, auth_headers):
+def test_list_filters_and_pagination(client, auth_headers):
     _create(client, auth_headers, company="A公司")
     _create(client, auth_headers, company="B公司", status="offer")
+    _create(client, auth_headers, company="C公司")
 
     by_q = client.get("/api/applications?q=B", headers=auth_headers).json()
-    assert len(by_q) == 1 and by_q[0]["company"] == "B公司"
+    assert by_q["total"] == 1 and by_q["items"][0]["company"] == "B公司"
 
     by_status = client.get("/api/applications?status_filter=offer", headers=auth_headers).json()
-    assert len(by_status) == 1 and by_status[0]["current_status"] == "offer"
+    assert by_status["total"] == 1 and by_status["items"][0]["current_status"] == "offer"
 
-    all_items = client.get("/api/applications", headers=auth_headers).json()
-    assert len(all_items) == 2
+    page1 = client.get("/api/applications?page=1&page_size=2", headers=auth_headers).json()
+    assert page1["total"] == 3 and len(page1["items"]) == 2 and page1["page"] == 1
+    page2 = client.get("/api/applications?page=2&page_size=2", headers=auth_headers).json()
+    assert len(page2["items"]) == 1 and page2["page"] == 2
 
 
 def test_stats_funnel_distribution_weekly(client, auth_headers):
@@ -100,7 +103,7 @@ def test_delete_application(client, auth_headers):
     application = _create(client, auth_headers)
     resp = client.delete(f"/api/applications/{application['id']}", headers=auth_headers)
     assert resp.status_code == 204
-    assert client.get("/api/applications", headers=auth_headers).json() == []
+    assert client.get("/api/applications", headers=auth_headers).json()["items"] == []
 
 
 def test_isolated_between_users(client, auth_headers):
@@ -117,7 +120,7 @@ def test_isolated_between_users(client, auth_headers):
         ).status_code
         == 404
     )
-    assert client.get("/api/applications", headers=other_headers).json() == []
+    assert client.get("/api/applications", headers=other_headers).json()["items"] == []
     assert (
         client.delete(
             f"/api/applications/{application['id']}", headers=other_headers

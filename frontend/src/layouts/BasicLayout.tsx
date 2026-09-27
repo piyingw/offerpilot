@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons'
 import { Avatar, Dropdown, Layout, Menu, Space, Typography } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/authStore'
 
 const { Sider, Header, Content } = Layout
@@ -30,6 +31,11 @@ export default function BasicLayout() {
   const logout = useAuthStore((s) => s.logout)
 
   const handleLogout = () => {
+    // 尽力吊销服务端的 refresh token，失败不阻塞本地登出
+    const refreshToken = useAuthStore.getState().refreshToken
+    if (refreshToken) {
+      authApi.logout(refreshToken).catch(() => undefined)
+    }
     logout()
     navigate('/login', { replace: true })
   }

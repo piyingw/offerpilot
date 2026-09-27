@@ -90,6 +90,13 @@ class ApplicationItemOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ApplicationPageOut(BaseModel):
+    items: list[ApplicationItemOut]
+    total: int
+    page: int
+    page_size: int
+
+
 class FunnelItem(BaseModel):
     status: str
     label: str

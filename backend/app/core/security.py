@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
@@ -7,6 +9,20 @@ from app.core.config import settings
 
 # 校验一次即丢弃的哈希，用于登录时抹平"用户不存在"与"密码错误"的耗时差
 TIMING_EQUALIZER_HASH = bcrypt.hashpw(b"timing-equalizer-dummy", bcrypt.gensalt(rounds=10)).decode()
+
+
+def utcnow_naive() -> datetime:
+    """数据库 DateTime 列统一存朴素 UTC 时间，避免时区混用。"""
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
+def generate_refresh_token() -> str:
+    return secrets.token_urlsafe(48)
+
+
+def hash_token(token: str) -> str:
+    """refresh token 只存 SHA-256 摘要，库被拖走也无法直接使用。"""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def hash_password(password: str) -> str:

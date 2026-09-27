@@ -54,6 +54,52 @@ def test_me_without_token(client):
     assert resp.status_code == 401
 
 
+def _login(client) -> dict:
+    client.post("/api/auth/register", json=FAKE_USER)
+    creds = {"username": FAKE_USER["username"], "password": FAKE_USER["password"]}
+    resp = client.post("/api/auth/login", json=creds)
+    assert resp.status_code == 200
+    return resp.json()
+
+
+def test_login_returns_refresh_token(client):
+    body = _login(client)
+    assert len(body["refresh_token"]) > 20
+    assert body["token_type"] == "bearer"
+
+
+def test_refresh_rotates_and_old_token_invalid(client):
+    old = _login(client)["refresh_token"]
+
+    resp = client.post("/api/auth/refresh", json={"refresh_token": old})
+    assert resp.status_code == 200
+    rotated = resp.json()
+    assert rotated["refresh_token"] != old
+    assert rotated["user"]["username"] == FAKE_USER["username"]
+
+    # 旋转后旧 refresh token 立即作废
+    resp = client.post("/api/auth/refresh", json={"refresh_token": old})
+    assert resp.status_code == 401
+
+    # 新 token 仍可继续刷新
+    resp = client.post("/api/auth/refresh", json={"refresh_token": rotated["refresh_token"]})
+    assert resp.status_code == 200
+
+
+def test_refresh_rejects_unknown_token(client):
+    resp = client.post("/api/auth/refresh", json={"refresh_token": "not-a-real-token-value"})
+    assert resp.status_code == 401
+
+
+def test_logout_revokes_refresh_token(client):
+    body = _login(client)
+    resp = client.post("/api/auth/logout", json={"refresh_token": body["refresh_token"]})
+    assert resp.status_code == 204
+
+    resp = client.post("/api/auth/refresh", json={"refresh_token": body["refresh_token"]})
+    assert resp.status_code == 401
+
+
 def test_health(client):
     resp = client.get("/api/health")
     assert resp.status_code == 200

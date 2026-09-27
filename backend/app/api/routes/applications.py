@@ -1,8 +1,8 @@
 from collections import Counter
 from datetime import date, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_current_user
 from app.core.status import STAGE_ORDER, STATUS_LABELS
@@ -12,8 +12,8 @@ from app.models.resume import Resume
 from app.models.user import User
 from app.schemas.application import (
     ApplicationCreate,
-    ApplicationItemOut,
     ApplicationOut,
+    ApplicationPageOut,
     ApplicationUpdate,
     FunnelItem,
     RecentEventItem,
@@ -78,28 +78,41 @@ def create_application(
     return application
 
 
-@router.get("", response_model=list[ApplicationItemOut], summary="投递记录列表")
+@router.get("", response_model=ApplicationPageOut, summary="投递记录列表（分页）")
 def list_applications(
     q: str | None = None,
     status_filter: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> list[Application]:
+) -> ApplicationPageOut:
     query = db.query(Application).filter(Application.user_id == user.id)
     if status_filter:
         query = query.filter(Application.current_status.in_(status_filter.split(",")))
     if q:
         like = f"%{q}%"
         query = query.filter(Application.company.like(like) | Application.position.like(like))
-    return query.order_by(Application.applied_at.desc(), Application.id.desc()).all()
+    total = query.count()
+    items = (
+        query.order_by(Application.applied_at.desc(), Application.id.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    return ApplicationPageOut(items=items, total=total, page=page, page_size=page_size)
 
 
 @router.get("/stats", response_model=StatsOut, summary="看板统计（漏斗 / 分布 / 周投递量）")
 def application_stats(
     user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> StatsOut:
+    # selectinload 一次批量取回全部 events，避免逐条 lazy load 的 N+1
     applications = (
-        db.query(Application).filter(Application.user_id == user.id).all()
+        db.query(Application)
+        .options(selectinload(Application.events))
+        .filter(Application.user_id == user.id)
+        .all()
     )
     total = len(applications)
     dist = Counter(a.current_status for a in applications)

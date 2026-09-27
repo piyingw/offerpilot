@@ -1,6 +1,10 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# backend/ 目录（config.py 位于 backend/app/core/ 下）
+BASE_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -14,7 +18,8 @@ class Settings(BaseSettings):
     # 生产环境务必通过 .env 覆盖为随机长字符串
     SECRET_KEY: str = "dev-secret-do-not-use-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     # 设置 DATABASE_URL 可整体覆盖下面的 MySQL 单项配置（测试环境用 SQLite）
     DATABASE_URL: str | None = None
@@ -32,7 +37,8 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str = ""
     LLM_MODEL: str = ""
 
-    UPLOAD_DIR: str = "uploads"
+    # 默认绝对路径（基于 backend/），避免启动目录不同导致文件丢失；可用 .env 覆盖
+    UPLOAD_DIR: str = str(BASE_DIR / "uploads")
 
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 

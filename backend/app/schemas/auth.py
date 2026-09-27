@@ -16,6 +16,14 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class RefreshRequest(BaseModel):
+    refresh_token: str = Field(min_length=10)
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str = Field(min_length=10)
+
+
 class UserOut(BaseModel):
     id: int
     username: str
@@ -27,5 +35,6 @@ class UserOut(BaseModel):
 
 class TokenOut(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
     user: UserOut
